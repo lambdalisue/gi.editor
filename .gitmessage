@@ -1,0 +1,28 @@
+
+# Emoji Prefixes
+#
+# ✨  :sparkles:     Add feature
+# 🚿  :shower:       Remove feature
+# 💥  :boom:         Breaking changes
+# 💩  :hankey:       Bad code
+#
+# 👕  :shirt:        Lint
+# 💚  :green_heart:  Test
+# 📝  :memo:         Comment
+# 📚  :books:        Document
+# 🎬  :clapper:      Development tools
+# 🆙  :up:           Dependencies
+#
+# 😇  :innocent:     Typo fix
+# 🐛  :bug:          Bug fix
+# 👮  :cop:          Security fix
+# 🚀  :rocket:       Performance fix
+# 🎨  :art:          Accessibility
+# 💪  :muscle:       Refactoring
+#
+# 🚧  :construction: Work In Progress
+#
+# Install:
+#
+#   git config commit.template .gitmessage
+#
