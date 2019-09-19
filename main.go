@@ -1,10 +1,10 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net"
 	"os"
-	"flag"
 	"strconv"
 )
 
@@ -13,7 +13,7 @@ var (
 )
 
 const (
-	exitFatal = 1
+	exitFatal     = 1
 	exitFatalArgs = 3
 	exitFatalListen
 	exitFatalAccept
@@ -24,7 +24,7 @@ const (
 func run(addr string) (int, error) {
 	args := flag.Args()
 	if len(args) < 1 {
-		return exitFatalArgs, fmt.Errorf("No file has specified.")
+		return exitFatalArgs, fmt.Errorf("no file has specified")
 	}
 	fmt.Println("")
 	fmt.Println("file:" + args[0])
@@ -61,7 +61,7 @@ func run(addr string) (int, error) {
 func main() {
 	var (
 		version = flag.Bool("version", false, "show version")
-		addr = flag.String("addr", "127.0.0.1:0", "TCP address to listen")
+		addr    = flag.String("addr", "127.0.0.1:0", "TCP address to listen")
 	)
 	flag.Parse()
 	if *version {
