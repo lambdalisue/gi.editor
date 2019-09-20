@@ -1,76 +1,73 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
+	"log"
 	"net"
 	"os"
 	"strconv"
+
+	"github.com/comail/colog"
 )
 
 var (
 	appVersion = "dev"
 )
 
-const (
-	exitFatal     = 1
-	exitFatalArgs = 3
-	exitFatalListen
-	exitFatalAccept
-	exitFatalRead
-	exitFatalParse
-)
-
-func run(addr string) (int, error) {
-	args := flag.Args()
-	if len(args) < 1 {
-		return exitFatalArgs, fmt.Errorf("no file has specified")
-	}
-	fmt.Println("")
-	fmt.Println("file:" + args[0])
-	l, err := net.Listen("tcp", addr)
-	if err != nil {
-		return exitFatalListen, err
-	}
-	fmt.Println("addr:" + l.Addr().String())
-	for {
-		conn, err := l.Accept()
-		if err != nil {
-			if ne, ok := err.(net.Error); ok {
-				if ne.Temporary() {
-					continue
-				}
-			}
-			return exitFatalAccept, err
-		}
-		// Accept the first request only
-		defer conn.Close()
-		var b [16]byte
-		n, err := conn.Read(b[:])
-		if err != nil {
-			return exitFatalRead, err
-		}
-		exitCode, err := strconv.Atoi(string(b[:n]))
-		if err != nil {
-			return exitFatalParse, err
-		}
-		return exitCode, nil
-	}
-}
-
 func main() {
 	var (
 		version = flag.Bool("version", false, "show version")
-		addr    = flag.String("addr", "127.0.0.1:0", "TCP address to listen")
+		addr    = flag.String("addr", "", "TCP address to listen")
 	)
 	flag.Parse()
+	colog.Register()
+
 	if *version {
 		fmt.Println(appVersion)
-		os.Exit(exitFatal)
+		os.Exit(0)
+	} else if *addr == "" {
+		log.Fatalf("error: -addr must be specified\n")
+	} else if flag.NArg() < 1 {
+		log.Fatalf("error: no file has specified\n")
 	}
-	exitCode, err := run(*addr)
+
+	exitCode, err := run(*addr, flag.Args()[0])
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		log.Fatalf("error: %s\n", err)
 	}
 	os.Exit(exitCode)
+}
+
+func run(addr, file string) (int, error) {
+	conn, err := net.Dial("tcp", addr)
+	if err != nil {
+		return 1, fmt.Errorf("faield to dial %s: %w", addr, err)
+	}
+	defer conn.Close()
+
+	// Notify the filename to the server
+	w := bufio.NewWriter(conn)
+	if _, err := w.WriteString(file + "\n"); err != nil {
+		return 1, fmt.Errorf("failed to write %s: %w", conn, err)
+	}
+	if err := w.Flush(); err != nil {
+		return 1, fmt.Errorf("failed to flush %s: %w", conn, err)
+	}
+
+	// Read server and exit with a given exitCode
+	s := bufio.NewScanner(conn)
+	var exitCode int
+	for s.Scan() {
+		recv := s.Text()
+		exitCode, err = strconv.Atoi(recv)
+		if err != nil {
+			return 1, fmt.Errorf("failed to parse %s: %w", recv, err)
+		}
+	}
+	if err := s.Err(); err != nil {
+		return 1, fmt.Errorf("failed to complete scan successfully: %w", err)
+	}
+	return exitCode, nil
 }
