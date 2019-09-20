@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -56,18 +57,18 @@ func run(addr, file string) (int, error) {
 		return 1, fmt.Errorf("failed to flush %s: %w", conn, err)
 	}
 
-	// Read server and exit with a given exitCode
-	s := bufio.NewScanner(conn)
-	var exitCode int
-	for s.Scan() {
-		recv := s.Text()
-		exitCode, err = strconv.Atoi(recv)
-		if err != nil {
-			return 1, fmt.Errorf("failed to parse %s: %w", recv, err)
+	// Read FIRST line from the server as exitCode and exit
+	r := bufio.NewReader(conn)
+	recv, err := r.ReadString('\n')
+	if err != nil {
+		if err == io.EOF || err == io.ErrClosedPipe {
+			return 1, fmt.Errorf("exitCode must be given prior to EOF")
 		}
+		return 1, fmt.Errorf("failed to read: %w", err)
 	}
-	if err := s.Err(); err != nil {
-		return 1, fmt.Errorf("failed to complete scan successfully: %w", err)
+	exitCode, err := strconv.Atoi(recv)
+	if err != nil {
+		return 1, fmt.Errorf("failed to parse %s: %w", recv, err)
 	}
 	return exitCode, nil
 }
